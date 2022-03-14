@@ -1,10 +1,12 @@
-require('dotenv').config();
+// require('dotenv').config();
 
-const puppeteer = require('puppeteer');
+const cron = require('node-cron');
 const discord = require('discord.js');
+const puppeteer = require('puppeteer');
 
-// download image
-(async () => {
+const client = new discord.Client({ intents: ['GUILD_MESSAGES'] });
+
+cron.schedule('0 0 1,17 * * 1-5', (async () => {
     const ts = Date.now();
     // Launch headless Chrome.
     const browser = await puppeteer.launch();
@@ -29,18 +31,14 @@ const discord = require('discord.js');
     await table.screenshot({ path: 'vertretungsplan.png' });
     console.log(`Downloaded latest vertretungsplan in ${(Date.now() - ts) / 1000} seconds`);
     await browser.close();
-
-    const client = new discord.Client({ intents: ['GUILD_MESSAGES', 'GUILD_MESSAGE_TYPING', 'GUILD_SCHEDULED_EVENTS'] });
-
-    client.on('ready', async () => {
-        console.log(`Logged in as ${client.user.tag}!`);
-        await client.channels.fetch(process.env.CHANNEL_ID).then(async (channel) => {
-            // Send a local file
-            await channel.send({files: ['./vertretungsplan.png']})
-            .catch(console.error);
-        });
-        client.destroy();
-    });
-
+    
     await client.login(process.env.DISCORD_TOKEN);
-})();
+    console.log(`Logged in as ${client.user.tag}!`);
+    await client.channels.fetch(process.env.CHANNEL_ID).then(async (channel) => {
+        // Send a local file
+        await channel.send({ files: ['./vertretungsplan.png'] })
+            .catch(console.error);
+    });
+    client.destroy();
+}));
+

@@ -40,10 +40,10 @@ discord.on('ready', async client => {
     channel.send(help)
 }).on("messageCreate", async message => {
     if (message.author.bot) return;
-    if (!message.content.startsWith('!vpln')) return;
+    if (!(message.content.startsWith('!vpln') || message.content.startsWith('!vplan'))) return;
     const args = message.content.split(/ +/).slice(1);
     if (!args.length) {
-        await downloadVertretungsplan().catch(debug(`Error downloading new vplan: ${err}. Returning outdated info!`));
+        await downloadVertretungsplan().catch(reason => { debug(`Error downloading new vplan: ${reason}. Returning outdated info!`) });
         await message.reply({ files: ['vertretungsplan.png'] })
             .then(() => { console.log(`Replied with vplan to ${message.author.tag}`) })
             .catch(() => { debug(`Error replying to ${message.author.tag}: ${err}`) });

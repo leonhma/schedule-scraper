@@ -1,5 +1,5 @@
 // import { config } from 'dotenv';
-// config();
+//config();
 import { Client } from 'discord.js';
 import pptr from 'puppeteer';
 import { createClient } from 'redis';

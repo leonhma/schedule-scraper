@@ -20,21 +20,22 @@ const help = `!vpln help                      Displays this message
 !vpln                           Replies a picture of the current Vertretungsplan
 !vpln config
              channel <channel>  Sets the channel to send messages to
-             cron <cron>        Sets the cron expression to send messages to
+             cron <cron>        Sets the cron expression for sending messages (disabled if invalid expression)
              cron               Displays the current cron expression`;
 
 let CHANNEL_ID = await redis.get('channel');
 let CRON = await redis.get('cron');
-await updateCron();
 
 console.log(`Channel: ${CHANNEL_ID}`);
 console.log(`Cron:    ${CRON || 'null'}`);
 console.log('')
 
+await updateCron();
+
 discord.on('ready', async client => {
     console.log(`Logged in as ${client.user.tag}!`);
 }).on('guildCreate', async guild => {
-    console.log('guildCreate')
+    console.log(`Joined guild ${guild.name}`);
     const channel = guild.channels.cache.find(channel => channel.type === 'GUILD_TEXT' && channel.permissionsFor(guild.me).has('SEND_MESSAGES'))
     channel.send("Thanks for inviting me.\nI'm a bot that will send you a daily Vertretungsplan.\nRemember to set the channel and cron parameters in the config.")
     channel.send(help)
@@ -65,7 +66,6 @@ discord.on('ready', async client => {
                     case 'cron':
                         if (args.length > 2) {
                             CRON = args.slice(2).join(' ');
-                            console.log(CRON);
                             await redis.set('cron', CRON);
                             await updateCron();
                             await message.reply(`Cron expression set to \`${CRON}\``)
@@ -108,8 +108,8 @@ async function downloadVertretungsplan() {
 }
 
 async function updateCron() {
-    if (!typeof currentTask == 'undefined') {
-        currentTask.destroy();
+    if (currentTask) {
+        currentTask.stop();
         currentTask = null;
     }
     if (CRON) {
@@ -127,11 +127,11 @@ async function periodicVplanUpdate(time) {
     console.log(`periodicVplanUpdate at ${time}`)
     if (CHANNEL_ID) {
         await downloadVertretungsplan().catch(reason => { debug(reason) });
-        await discord.channels.fetch(CHANNEL_ID).then(async (channel) => {
+        await discord.channels.fetch(CHANNEL_ID).then(async channel => {
             // Send a local file
             await channel.send({ files: ['./vertretungsplan.png'] })
                 .catch(reason => { debug(`Error sending vplan to ${CHANNEL_ID}: ${reason}`) });
-        }).catch(reason => { console.log(`Couldn't fetch channel ${CHANNEL_ID}: ${reason}`) });
+        }).catch(reason => { debug(`Couldn't fetch channel ${CHANNEL_ID}: ${reason}`) });
     }
 }
 

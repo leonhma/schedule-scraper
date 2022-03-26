@@ -83,7 +83,7 @@ discord.on('ready', async client => {
 
 async function downloadVertretungsplan() {
     // Launch headless Chrome.
-    const browser = await pptr.launch();
+    const browser = await pptr.launch({ args: ['--no-sandbox'] });
     const page = await browser.newPage();
     await page.goto('https://emagyha.eltern-portal.org/service/vertretungsplan');
     // login
